@@ -1,0 +1,324 @@
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mydb               |
+| mysql              |
+| performance_schema |
+| sakila             |
+| sys                |
+| world              |
++--------------------+
+7 rows in set (0.01 sec)
+
+
+mysql> use mydb
+Database changed
+
+
+
+mysql> CREATE TABLE Myanmar_Data (
+    -> indian_port varchar(100),
+    -> mode_of_shipment varchar(5),
+    -> Date datetime,
+    -> HS_code int,
+    -> description varchar(255),
+    -> quantity double,
+    -> Unit varchar(5),
+    -> Rate_INR double,
+    -> rate_INV double,
+    -> Currency varchar(5),
+    -> Amount_INV double,
+    -> FOB_INR double,
+    -> IEC varchar(50),
+    -> Exporter varchar(50),
+    -> Address varchar(100),
+    -> city varchar(50),
+    -> Importer varchar(100),
+    -> Foreign_port varchar(50),
+    -> Importer_Country varchar(50),
+    -> Generic_Name varchar(50)
+    -> );
+Query OK, 0 rows affected (0.07 sec)
+
+
+
+LOAD DATA INFILE 'C:\ProgramData\MySQL\MySQL Server 8.0\Uploads\updatedFY23-24.csv'
+INTO TABLE MyanmarData
+FIELDS TERMINATED BY ',' ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
+
+mysql> show tables;
++----------------+
+| Tables_in_mydb |
++----------------+
+| myanmardata    |
++----------------+
+1 row in set (0.00 sec)
+
+
+
+mysql> select * from myanmardata limit 1 \G;
+*************************** 1. row ***************************
+     indian_port: DHANNAD ICD (INDHA6)
+mode_of_shipment: ICD
+            Date: 2023-04-01 00:00:00
+         HS_code: 30049099
+     description: VOLIBO 0.3 TABLTS(VOGLIBOSE TABLETS 0.3M
+        quantity: 270
+            Unit: PCS
+        Rate_INR: 492.592
+        rate_INV: 6.02
+        Currency: USD
+      Amount_INV: 1625.4
+         FOB_INR: 133000
+        Exporter: STALLION LABORATORIES PVT LTD
+        Importer: MYIT MAHAR TRADING CO., LTD
+Importer_Country: MYANMAR
+    Generic_Name: VOGLIBOSE
+1 row in set (0.00 sec)
+
+
+mysql> describe myanmardata;
++------------------+--------------+------+-----+---------+-------+
+| Field            | Type         | Null | Key | Default | Extra |
++------------------+--------------+------+-----+---------+-------+
+| indian_port      | varchar(100) | YES  |     | NULL    |       |
+| mode_of_shipment | varchar(5)   | YES  |     | NULL    |       |
+| Date             | datetime     | YES  |     | NULL    |       |
+| HS_code          | int          | YES  |     | NULL    |       |
+| description      | varchar(255) | YES  |     | NULL    |       |
+| quantity         | double       | YES  |     | NULL    |       |
+| Unit             | varchar(5)   | YES  |     | NULL    |       |
+| Rate_INR         | double       | YES  |     | NULL    |       |
+| rate_INV         | double       | YES  |     | NULL    |       |
+| Currency         | varchar(5)   | YES  |     | NULL    |       |
+| Amount_INV       | double       | YES  |     | NULL    |       |
+| FOB_INR          | double       | YES  |     | NULL    |       |
+| Exporter         | varchar(50)  | YES  |     | NULL    |       |
+| Importer         | varchar(100) | YES  |     | NULL    |       |
+| Importer_Country | varchar(50)  | YES  |     | NULL    |       |
+| Generic_Name     | varchar(50)  | YES  |     | NULL    |       |
++------------------+--------------+------+-----+---------+-------+
+16 rows in set (0.00 sec)
+
+
+mysql> select Exporter, Generic_name, Generic_name_rank
+    -> from (select Exporter, Generic_name, row_number() over(partition by Exporter order by sum(`fob_inr`) desc) as Generic_name_rank
+    -> from myanmardata group by Exporter, Generic_name) abc
+    -> where Generic_name_rank <= 3
+    -> limit 15;
++------------------------------------+-------------------------+-------------------+
+| Exporter                           | Generic_name            | Generic_name_rank |
++------------------------------------+-------------------------+-------------------+
+| ABIL CHEMPHARMA PRIVATE LIMITED    | LINEZOLID               |                 1 |
+| ACULIFE HEALTHCARE PRIVATE LIMITED | METRONIDAZOLE           |                 1 |
+| ADVANOV PHARMA PRIVATE LIMITED     | AMOXICILLIN             |                 1 |
+| ADVANOV PHARMA PRIVATE LIMITED     | DICLOFENAC              |                 2 |
+| ADVANOV PHARMA PRIVATE LIMITED     | OMEPRAZOLE              |                 3 |
+| AEON FORMULATIONS PRIVATE LIMITED  | METFORMIN               |                 1 |
+| AEON FORMULATIONS PRIVATE LIMITED  | PARACETAMOL             |                 2 |
+| AEON FORMULATIONS PRIVATE LIMITED  | DIPHENHYDRAMINE         |                 3 |
+| AGIO PHARMACEUTICALS LIMITED       | SULBACTAM               |                 1 |
+| AGIO PHARMACEUTICALS LIMITED       | CETIRIZINE              |                 2 |
+| AGIO PHARMACEUTICALS LIMITED       | ATORVASTATIN            |                 3 |
+| AGL PHARMA PRIVATE LIMITED         | CETIRIZINE              |                 1 |
+| AGL PHARMA PRIVATE LIMITED         | OMEPRAZOLE              |                 2 |
+| AHLCON PARENTERALS (INDIA) LIMITED | METRONIDAZOLE           |                 1 |
+| AHLCON PARENTERALS (INDIA) LIMITED | LEVOFLOXACIN; OFLOXACIN |                 2 |
++------------------------------------+-------------------------+-------------------+
+15 rows in set (0.02 sec)
+
+
+
+mysql> select mode_of_shipment, count(mode_of_shipment)
+    -> from myanmardata
+    -> group by mode_of_shipment
+    -> order by count(mode_of_shipment) desc;
++------------------+-------------------------+
+| mode_of_shipment | count(mode_of_shipment) |
++------------------+-------------------------+
+| SEA              |                     923 |
+| AIR              |                     836 |
+| ICD              |                     530 |
++------------------+-------------------------+
+3 rows in set (0.01 sec)
+
+
+mysql> select count(distinct(Exporter)) from myanmardata;
++---------------------------+
+| count(distinct(Exporter)) |
++---------------------------+
+|                       191 |
++---------------------------+
+1 row in set (0.01 sec)
+
+
+mysql> select count(distinct(importer)) from myanmardata;
++---------------------------+
+| count(distinct(importer)) |
++---------------------------+
+|                       156 |
++---------------------------+
+1 row in set (0.01 sec)
+
+
+mysql> select Generic_name, sum(quantity) from myanmardata
+    -> group by Generic_name
+    -> order by sum(quantity) desc
+    -> limit 5;
++---------------+---------------+
+| Generic_name  | sum(quantity) |
++---------------+---------------+
+| METRONIDAZOLE |      45348635 |
+| PARACETAMOL   |      37016243 |
+| GLICLAZIDE    |      14654485 |
+| OMEPRAZOLE    |      11357932 |
+| METFORMIN     |       8571704 |
++---------------+---------------+
+5 rows in set (0.01 sec)
+
+
+mysql> select Generic_name, sum(`fob_inr`) from myanmardata
+    -> group by Generic_name
+    -> order by sum(`fob_inr`) desc
+    -> limit 5;
++-------------------------+--------------------+
+| Generic_name            | sum(`fob_inr`)     |
++-------------------------+--------------------+
+| AMLODIPINE              | 227687240.60306495 |
+| AMOXICILLIN             | 196781039.63598004 |
+| AMPICILLIN; CLOXACILLIN | 176580698.76994005 |
+| LOSARTAN                |  148487546.3360565 |
+| ATORVASTATIN            |     140659501.3945 |
++-------------------------+--------------------+
+5 rows in set (0.01 sec)
+
+
+mysql> select Exporter, sum(Quantity) from myanmardata
+    -> group by Exporter
+    -> order by sum(Quantity) desc
+    -> limit 5;
++---------------------------------------+--------------------+
+| Exporter                              | sum(Quantity)      |
++---------------------------------------+--------------------+
+| BAL PHARMA LIMITED                    |        43893448.21 |
+| PINNACLE LIFE SCIENCE PRIVATE LIMITED |           42247800 |
+| BRAWN LABORATORIES LIMITED            |           39398274 |
+| UNICHEM LABORATORIES LIMITED          | 16321338.697000004 |
+| IPCA LABORATORIES LIMITED             |           12075200 |
++---------------------------------------+--------------------+
+5 rows in set (0.01 sec)
+
+
+
+mysql> select Exporter, sum(`fob_inr`) as Total_Sales from myanmardata
+    -> group by Exporter
+    -> order by Total_Sales desc
+    -> limit 5;
++-----------------------------------+-------------------+
+| Exporter                          | Total_Sales       |
++-----------------------------------+-------------------+
+| STALLION LABORATORIES PVT LTD     |     523915974.782 |
+| AMN LIFE SCIENCE PRIVATE LIMITED  | 345183910.8934199 |
+| UNICHEM LABORATORIES LIMITED      | 138055772.7905565 |
+| MICRO LABS LIMITED                |     122842491.054 |
+| DELTA BIOPHARMA PRIVATE LIMITED   | 79012477.31100002 |
++-----------------------------------+-------------------+
+5 rows in set (0.02 sec)
+
+
+mysql> select count(Generic_name) as Total_Generic_names from myanmardata;
++---------------------+
+| Total_Generic_names |
++---------------------+
+|                2289 |
++---------------------+
+1 row in set (0.01 sec)
+
+
+
+mysql> select Generic_name, avg(rate_inr) from myanmardata
+    -> group by Generic_name
+    -> order by avg(rate_inr) desc
+    -> limit 10;
++-------------------------+--------------------+
+| Generic_name            | avg(rate_inr)      |
++-------------------------+--------------------+
+| ERYTHROMYCIN            | 29284.624585714286 |
+| LOSARTAN                |  7335.363139622638 |
+| EFAVIRENZ               |  7092.791875000001 |
+| AMOXICILLIN             | 2605.5211477064227 |
+| IVERMECTIN              | 2473.0229999999997 |
+| AMPICILLIN; CLOXACILLIN |  2011.391903571429 |
+| AZITHROMYCIN            | 1950.7386781818184 |
+| PIRACETAM               | 1090.0923055555559 |
+| DOMPERIDONE; OMEPRAZOLE |  777.9893999999999 |
+| ITRACONAZOLE            |         647.304325 |
++-------------------------+--------------------+
+10 rows in set (0.01 sec)
+
+
+
+mysql> select year(date) as year, month(date) as month, round(sum(`fob_inr`)) as Total_sales from myanmardata
+    -> group by year, month
+    -> order by Total_sales desc;
++------+-------+-------------+
+| year | month | Total_sales |
++------+-------+-------------+
+| 2023 |     9 |   355135981 |
+| 2023 |    11 |   317641763 |
+| 2024 |     3 |   291514413 |
+| 2024 |     1 |   288805114 |
+| 2024 |     2 |   285289118 |
+| 2023 |     7 |   259706212 |
+| 2023 |    10 |   213645456 |
+| 2023 |     8 |   174704444 |
+| 2023 |     5 |   169806619 |
+| 2023 |    12 |   142420511 |
+| 2023 |     6 |   137310685 |
+| 2023 |     4 |   135112000 |
++------+-------+-------------+
+12 rows in set (0.01 sec)
+
+
+
+mysql> select Indian_Port, SUM(`fob_inr`) AS Total_Sales
+    -> from myanmardata
+    -> group by Indian_Port
+    -> order by Total_sales DESC
+    -> limit 10;
++------------------------------+--------------------+
+| Indian_Port                  | Total_Sales        |
++------------------------------+--------------------+
+| DELHI AIR                    | 409838905.25549984 |
+| JNPT/ NHAVA SHEVA SEA        | 328129093.97349995 |
+| NHAVA SHEVA SEA (INNSA1)     | 193443972.80174002 |
+| Jnpt                         | 192781203.98900002 |
+| DHANNAD ICD                  | 185833850.04699993 |
+| SAHAR AIR                    | 152254074.64756703 |
+| CHENNAI SEA                  |     149911495.1665 |
+| TUGLAKABAD ICD               | 134750122.15500006 |
+| AHEMDABAD ICD                |  84039653.98549995 |
+| DELHI AIR CARGO ACC (INDEL4) |  76599747.02155654 |
++------------------------------+--------------------+
+10 rows in set (0.00 sec)
+
+
+
+mysql> select importer, Generic_name, SUM(`fob_inr`)
+    -> from myanmardata
+    -> where Generic_name regexp 'aceclofenac' and Generic_name regexp 'paracetamol'
+    -> group by importer, Generic_name;
++---------------+--------------------------+----------------+
+| importer      | Generic_name             | SUM(`fob_inr`) |
++---------------+--------------------------+----------------+
+| JDS CO. LTD.  | ACECLOFENAC; PARACETAMOL |     6900862.57 |
++---------------+--------------------------+----------------+
+1 row in set (0.01 sec)
+
+
+
